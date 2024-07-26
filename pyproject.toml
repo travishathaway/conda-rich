@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "conda-rich"
 version = "0.1.0"
-description = "Demonstration project utilizing the "rich" library for conda"
+description = "Demonstration project utilizing the \"rich\" library for conda"
 requires-python = ">=3.8"
 classifiers = [
   "Operating System :: OS Independent",
@@ -23,7 +23,19 @@ dependencies = [
 ]
 
 [project.entry-points.conda]
-conda-rich = "conda-rich.hooks"
+conda-rich = "conda_rich.hooks"
 
 [tool.setuptools]
-packages = ["conda-rich"]
+packages = ["conda_rich"]
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.dependencies]
+conda = {channel = "conda-canary/label/dev"}
+
+[tool.pixi.pypi-dependencies]
+conda-rich = { path = ".", editable = true }
+
+[tool.pixi.tasks]
