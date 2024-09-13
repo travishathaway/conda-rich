@@ -6,16 +6,19 @@ This reporter handler provides the default output for conda.
 from __future__ import annotations
 
 import sys
+
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from rich.console import Console
-from rich.progress import Progress
+from rich.live import Live
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.prompt import Prompt
 
 from conda.base.context import context
 from conda.exceptions import CondaError
 from conda.plugins import CondaReporterBackend, hookimpl
-from conda.plugins.types import ProgressBarBase, ReporterRendererBase
+from conda.plugins.types import ProgressBarBase, ReporterRendererBase, SpinnerBase
 
 if TYPE_CHECKING:
     from typing import ContextManager
@@ -89,6 +92,20 @@ class RichReporterRenderer(ReporterRendererBase):
 
         return rich_context_manager()
 
+    def spinner(self, message, fail_message="failed\n"):
+        if context.quiet:
+            return QuietSpinner(message, fail_message)
+        else:
+            return RichSpinner(message, fail_message)
+
+    def prompt(
+        self, message: str = "Continue?", choices=("yes", "no"), default: str = "yes"
+    ):
+        """
+        Implementation of prompt
+        """
+        return Prompt.ask(message, choices=choices, default=default)
+
 
 class RichProgressBar(ProgressBarBase):
     def __init__(
@@ -101,9 +118,6 @@ class RichProgressBar(ProgressBarBase):
 
         self.progress: Progress | None = None
 
-        # We are passed in a list of context managers. Only one of them
-        # is allowed to be the ``rich.Progress`` one we've defined. We
-        # find it and then set it to ``self.progress``.
         if isinstance(context_manager, Progress):
             self.progress = context_manager
 
@@ -129,6 +143,45 @@ class RichProgressBar(ProgressBarBase):
     def refresh(self) -> None:
         if self.progress is not None:
             self.progress.refresh()
+
+
+class RichSpinner(SpinnerBase):
+    def __init__(self, message: str, fail_message: str = "failed\n"):
+        super().__init__(message, fail_message)
+
+        self.live_ctx = None
+        self.live = None
+        self.task_id = None
+
+    def __enter__(self):
+        self.progress = Progress(
+            TextColumn("[progress.description]{task.description}"),
+            SpinnerColumn("aesthetic"),
+        )
+        self.live_ctx = Live(self.progress, transient=True)
+        self.live = self.live_ctx.__enter__()
+        self.progress.add_task(self.message, start=False)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.live_ctx is not None:
+            self.live.console.print(f"{self.message} (done)")
+            self.live_ctx.__exit__(exc_type, exc_val, exc_tb)
+
+
+class QuietSpinner(SpinnerBase):
+    def __enter__(self):
+        sys.stdout.write(f"{self.message}: ")
+        sys.stdout.flush()
+
+        sys.stdout.write("...working... ")
+        sys.stdout.flush()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type or exc_val:
+            sys.stdout.write(self.fail_message)
+        else:
+            sys.stdout.write("done\n")
+        sys.stdout.flush()
 
 
 @hookimpl
