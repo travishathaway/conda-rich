@@ -64,7 +64,7 @@ class RichReporterRenderer(ReporterRendererBase):
         console = Console(file=sys.stdout)
 
         with console.capture() as capture:
-            console.print("Enviroments")
+            console.print("Environments")
             console.print(data)
 
         return capture.get()
@@ -112,11 +112,13 @@ class RichProgressBar(ProgressBarBase):
         self,
         description: str,
         context_manager=None,
+        visible_when_finished=False,
         **kwargs,
     ) -> None:
         super().__init__(description)
 
         self.progress: Progress | None = None
+        self.visible_when_finished = visible_when_finished
 
         if isinstance(context_manager, Progress):
             self.progress = context_manager
@@ -134,7 +136,7 @@ class RichProgressBar(ProgressBarBase):
             self.progress.update(self.task, completed=fraction)
 
             if fraction == 1:
-                self.progress.update(self.task, visible=False)
+                self.progress.update(self.task, visible=self.visible_when_finished)
 
     def close(self) -> None:
         if self.progress is not None:
@@ -178,7 +180,7 @@ class QuietSpinner(SpinnerBase):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type or exc_val:
-            sys.stdout.write(self.fail_message)
+            sys.stdout.write(f"{self.fail_message}\n")
         else:
             sys.stdout.write("done\n")
         sys.stdout.flush()

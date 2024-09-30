@@ -1,36 +1,45 @@
 [build-system]
-requires = ["setuptools>=61.0", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "conda-rich"
-version = "0.1.0"
-description = "Demonstration project utilizing the \"rich\" library for conda"
+dynamic = ["version"]
+description = "Conda plugin which uses rich components for its display"
 requires-python = ">=3.8"
+license = {file = "LICENSE"}
 classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
   "Operating System :: OS Independent",
+  "License :: OSI Approved :: BSD License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy"
 ]
 dependencies = [
   "conda",
+  "rich"
 ]
 
 [project.entry-points.conda]
-conda-rich = "conda_rich.hooks"
+conda-rich = "conda_rich.plugin"
 
-[tool.setuptools]
-packages = ["conda_rich"]
+[tool.setuptools.packages]
+find = {}
+
+[tool.hatch.version]
+source = "vcs"
 
 [tool.pixi.project]
 channels = ["conda-forge"]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
 
 [tool.pixi.dependencies]
 conda = {channel = "conda-canary/label/dev"}
