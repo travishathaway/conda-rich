@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.entry-points.conda]
-conda-rich = "conda_rich.plugin"
+conda-rich = "conda_rich.hooks"
 
 [tool.setuptools.packages]
 find = {}
